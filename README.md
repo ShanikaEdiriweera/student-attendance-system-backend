@@ -6,9 +6,12 @@ Please read through this entire document to learn about getting started.
 
 ## Getting Started
 
-- Clone the project to a local workspace of your choice. SSH Key method is reccomended.
+- Clone the project to a local workspace of your choice. SSH Key method is recommended
 - **`SSH`**: `git@github.com:ShanikaEdiriweera/student-attendance-system-backend.git`
-- :point_right: [LEARN MORE](https://help.github.com/articles/connecting-to-github-with-ssh/) about creating SSH keys in Github.
+- :point_right: [LEARN MORE](https://help.github.com/articles/connecting-to-github-with-ssh/) about creating SSH keys in Github
+- `cd student-attendance-system-backend`
+- `npm install`
+- `npm start`
 
 ### Prerequisites
 
@@ -48,11 +51,7 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-`@TODO` ADD AUTHORS HERE
-
-_example_
-
-- **Burton Podczerwinski** - _Initial work_ - [BPod](https://github.com/bpod)
+- [Shanika Ediriweera](https://github.com/ShanikaEdiriweera) - Owner/Maintainer
 
 `@TODO` ADD Contributors and Maintainers
 
