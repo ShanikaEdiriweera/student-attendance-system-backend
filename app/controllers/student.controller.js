@@ -2,6 +2,7 @@ import moment from 'moment';
 import Student from '../models/student.model';
 import NumberUtil from '../util/numberUtil';
 import winston from '../../config/winston';
+import { response } from 'express';
 
 module.exports = {
     // Create and Save a new Student
@@ -88,7 +89,7 @@ module.exports = {
     findAll: (req, res) => {
         if (req.query.updatedAfter) {
             const updatedAfter = new Date(req.query.updatedAfter);
-            winston.info("Students updatedAfter: ", updatedAfter)
+            winston.info("Students updatedAfter: "+ updatedAfter)
             if (!moment(updatedAfter).isValid()) return res.status(400).send({ 
                 message: "Query parameter 'updatedAfter' should be a valid timestamp/date string."
             });
@@ -102,7 +103,7 @@ module.exports = {
             });
         } else if (req.query.grade) {
             const grade = req.query.grade;
-            winston.info("Students in grade: ", grade)
+            winston.info("Students in grade: "+ grade)
             // TODO: validate grade
             Student.find({ grade }, '-attendance')
             .then(students => {
@@ -114,7 +115,7 @@ module.exports = {
             });
         } else if (req.query.class) {
             const studentClass = req.query.class;
-            winston.info("Students in class: ", studentClass)
+            winston.info("Students in class: "+ studentClass)
             // TODO: validate class
             Student.find({ section: studentClass }, '-attendance')
             .then(students => {
@@ -579,5 +580,45 @@ module.exports = {
         }
         winston.info("Pin verification: ", responseBody);
         return res.send(responseBody);
-    }
+    },
+
+    /**
+     * Increment grade of all students
+     * Query params 'grade: String' - all students in grade
+     * Query params 'class' and 'grade' - all students in class
+     */
+    incrementGrade: (req, res) => {
+        if (req.query.grade && req.query.class) {
+            const grade = req.query.grade;
+            const newGrade = grade + 1;
+            const studentClass = req.query.class;
+            winston.info("Increment Students in class: ", studentClass);
+            // TODO: validate grade
+            Student.updateMany({ grade, section: studentClass }, { $set: { grade: newGrade } })
+            .then(({ matchedCount, modifiedCount }) => {
+                res.send({ matchedCount, modifiedCount });
+            }).catch(err => {
+                res.status(500).send({
+                    message: err.message || "Some error occurred while Incrementing students' grade."
+                });
+            });
+        } else if (req.query.grade) {
+            const grade = req.query.grade;
+            const newGrade = grade + 1;
+            winston.info("Increment Students in grade: ", grade)
+            // TODO: validate grade
+            Student.updateMany({ grade }, { $set: { grade: newGrade } })
+            .then(({ matchedCount, modifiedCount }) => {
+                res.send({ matchedCount, modifiedCount });
+            }).catch(err => {
+                res.status(500).send({
+                    message: err.message || "Some error occurred while Incrementing students' grade."
+                });
+            });
+        } else {
+            return res.status(400).send({ 
+                message: "Query parameter 'grade' (current grade) is needed to increment the grade."
+            });
+        }
+    },
 }

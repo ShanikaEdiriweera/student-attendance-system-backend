@@ -91,7 +91,11 @@ authenticatedRoutes.post('/students/attendance', students.getAllWithAttendance);
  * Query params 'from: Date' or 'to: Date'  can be given
  */
 authenticatedRoutes.get('/students/:studentId/attendance', students.getStudentWithAttendance);
-
+/**
+ * Increment grade of all students
+ * Query params 'grade: String' or, 'class' and 'grade' can be given
+ */
+authenticatedRoutes.get('/students/incrementGrade', students.incrementGrade);
 
 // attendance controller routes
 // ----------------------------
