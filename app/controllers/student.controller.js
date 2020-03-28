@@ -82,6 +82,8 @@ module.exports = {
     /**
      * Retrieve and return all Students from the database
      * If query param 'updatedAfter: DateTime' given, get students added/updated after given time
+     * If query param 'class: String' or 'grade: String' given, get students in given class or grade
+     * Query parameter precedence - updatedAfter > grade > class
      */
     findAll: (req, res) => {
         if (req.query.updatedAfter) {
@@ -91,6 +93,30 @@ module.exports = {
                 message: "Query parameter 'updatedAfter' should be a valid timestamp/date string."
             });
             Student.find({ updatedAt: {$gte: moment(updatedAfter)}}, '-attendance')
+            .then(students => {
+                res.send(students);
+            }).catch(err => {
+                res.status(500).send({
+                    message: err.message || "Some error occurred while retrieving students."
+                });
+            });
+        } else if (req.query.grade) {
+            const grade = req.query.grade;
+            winston.info("Students in grade: ", grade)
+            // TODO: validate grade
+            Student.find({ grade }, '-attendance')
+            .then(students => {
+                res.send(students);
+            }).catch(err => {
+                res.status(500).send({
+                    message: err.message || "Some error occurred while retrieving students."
+                });
+            });
+        } else if (req.query.class) {
+            const studentClass = req.query.class;
+            winston.info("Students in class: ", studentClass)
+            // TODO: validate class
+            Student.find({ section: studentClass }, '-attendance')
             .then(students => {
                 res.send(students);
             }).catch(err => {

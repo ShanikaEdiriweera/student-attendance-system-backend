@@ -53,6 +53,7 @@ authenticatedRoutes.post('/students', students.create);
 /**
  * Retrieve all Students
  * If query param 'updatedAfter: DateTime' given, get students added/updated after given time
+ * If query param 'class: String' or 'grade: String' given, get students in given class or grade
  */
 authenticatedRoutes.get('/students', students.findAll);
 // Retrieve a single Student with id
