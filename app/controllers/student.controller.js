@@ -544,6 +544,7 @@ module.exports = {
 
         let responseBody = { indexNo: studnetIndexNo };
         if (pin === student.ideamartPin) {
+            responseBody.nameWithInitials = student.nameWithInitials;
             responseBody.status = "SUCCESS";
             responseBody.message = "Pin verified";
         } else {
