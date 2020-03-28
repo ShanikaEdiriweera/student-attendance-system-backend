@@ -303,7 +303,7 @@ module.exports = {
         if (req_JSON_student.verified) updatedStudent.verified = req_JSON_student.verified;
 
         // Find student and update it with the request body
-        Student.findOneAndUpdate({ indexNo: studnetIndexNo }, updatedStudent, {new: true})
+        Student.findOneAndUpdate({ indexNo: studnetIndexNo }, updatedStudent, { new: true, projection: '-attendance' })
         .then(student => {
             if(!student) {
                 return res.status(404).send({
@@ -426,6 +426,109 @@ module.exports = {
         });
     },
 
+    // Create and Save a multiple Students
+    updateMultiple: async (req, res) => {
+        const req_JSON = req.body;
+
+        // Validate request
+        if( !req_JSON || 
+            !req_JSON.students ||
+            req_JSON.students.length === 0 ) {
+            
+            return res.status(400).send({
+                message: "Required request data can not be empty"
+            });
+        }
+    
+        const req_students = req_JSON.students;
+        let students_res = [];
+        // Validate student objects
+        for (let [index, req_JSON_student] of req_students.entries()) {
+            if( !req_JSON_student.indexNo ) {
+                
+                return res.status(400).send({
+                    message: `Required Student details can not be empty on no. ${index} student`,
+                    studentWithError: req_JSON_student,
+                    indexWithError: index,
+                    savedStudents: students_res
+                });
+            }
+    
+            // vaidate DOB
+            let DOB;
+            if (req_JSON_student.DOB) {
+                DOB = moment(req_JSON_student.DOB, ["YYYY-MM-DD", "D/M/YYYY", "DD/MM/YYYY"], true);
+                if (DOB.isValid()) DOB = DOB.format('YYYY-MM-DD');
+                else return res.status(400).send({ 
+                    message: `Invalid date format for DOB for no. ${index} student`, 
+                    studentWithError: req_JSON_student,
+                    indexWithError: index,
+                    savedStudents: students_res
+                });
+            }
+            
+            const studnetIndexNo = req_JSON_student.indexNo;
+            try {
+                let updatedStudent = {};
+    
+                if (req_JSON_student.rfid) updatedStudent.rfid = req_JSON_student.rfid;
+                if (req_JSON_student.nameWithInitials) updatedStudent.nameWithInitials = req_JSON_student.nameWithInitials;
+                if (req_JSON_student.fullName) updatedStudent.fullName = req_JSON_student.fullName;
+                if (req_JSON_student.DOB) updatedStudent.DOB = DOB;
+                if (req_JSON_student.gender) updatedStudent.gender = req_JSON_student.gender;
+                if (req_JSON_student.profilePicture) updatedStudent.profilePicture = req_JSON_student.profilePicture;
+                if (req_JSON_student.address) updatedStudent.address = req_JSON_student.address;
+                if (req_JSON_student.grade) updatedStudent.grade = req_JSON_student.grade;
+                if (req_JSON_student.section) updatedStudent.section = req_JSON_student.section;
+                if (req_JSON_student.medium) updatedStudent.medium = req_JSON_student.medium;
+                if (req_JSON_student.contactNo1) updatedStudent.contactNo1 = req_JSON_student.contactNo1;
+                if (req_JSON_student.contactNo2) updatedStudent.contactNo2 = req_JSON_student.contactNo2;
+                if (req_JSON_student.guardianName) updatedStudent.guardianName = req_JSON_student.guardianName;
+                if (req_JSON_student.guardianAddress) updatedStudent.guardianAddress = req_JSON_student.guardianAddress;
+                if (req_JSON_student.guardianRelationship) updatedStudent.guardianRelationship = req_JSON_student.guardianRelationship;
+                if (req_JSON_student.specialCare) updatedStudent.specialCare = req_JSON_student.specialCare;
+                if (req_JSON_student.specialCareInfo) updatedStudent.specialCareInfo = req_JSON_student.specialCareInfo;
+                if (req_JSON_student.active) updatedStudent.active = req_JSON_student.active;
+                if (req_JSON_student.verified) updatedStudent.verified = req_JSON_student.verified;
+    
+                // Find student and update it with the request body
+                let updated = await Student.findOneAndUpdate({ indexNo: studnetIndexNo }, updatedStudent, {new: true, projection: '-attendance'});
+                
+                if(!updated) {
+                    return res.status(404).send({
+                        message: "Student not found with Index No. " + studnetIndexNo,
+                        studentWithError: req_JSON_student,
+                        indexWithError: index,
+                        savedStudents: students_res
+                    });
+                }
+                students_res.push(updated);
+    
+            } catch (err) {
+                winston.error("Error: ", err);
+                if(err.kind === 'ObjectId') {
+                    return res.status(404).send({
+                        message: "Student not found with Index No. " + studnetIndexNo,
+                        studentWithError: req_JSON_student,
+                        indexWithError: index,
+                        savedStudents: students_res
+                    });                
+                }
+                return res.status(500).send({
+                    message: err.message || "Error updating Student with Index No. " + studnetIndexNo,
+                    studentWithError: req_JSON_student,
+                    indexWithError: index,
+                    savedStudents: students_res
+                });
+            }
+        }
+        return res.send({
+            message: "SUCCESS",
+            noOfUpdatedStudents: students_res.length,
+            savedStudents: students_res
+        });
+    },
+    
     // Find a single Student with RFID
     findOneByRFID: (req, res) => {
         const rfid = req.params.rfid;
@@ -589,27 +692,35 @@ module.exports = {
      */
     incrementGrade: (req, res) => {
         if (req.query.grade && req.query.class) {
-            const grade = req.query.grade;
+            const grade = parseInt(req.query.grade);
+            if (isNaN(grade)) return res.status(400).send({ 
+                message: "Query parameter 'grade' should be a number."
+            });
             const newGrade = grade + 1;
             const studentClass = req.query.class;
-            winston.info("Increment Students in class: ", studentClass);
+            winston.info("Increment Students in class: "+ studentClass);
             // TODO: validate grade
             Student.updateMany({ grade, section: studentClass }, { $set: { grade: newGrade } })
-            .then(({ matchedCount, modifiedCount }) => {
-                res.send({ matchedCount, modifiedCount });
+            .then(({ n, nModified }) => {
+                winston.info(`No. of students in class: ${n}, grade incremented: ${nModified}`);
+                res.send({ matchedCount: n, modifiedCount: nModified });
             }).catch(err => {
                 res.status(500).send({
                     message: err.message || "Some error occurred while Incrementing students' grade."
                 });
             });
         } else if (req.query.grade) {
-            const grade = req.query.grade;
+            const grade = parseInt(req.query.grade);
+            if (isNaN(grade)) return res.status(400).send({ 
+                message: "Query parameter 'grade' should be a number."
+            });
             const newGrade = grade + 1;
-            winston.info("Increment Students in grade: ", grade)
+            winston.info("Increment Students in grade: "+ grade)
             // TODO: validate grade
             Student.updateMany({ grade }, { $set: { grade: newGrade } })
-            .then(({ matchedCount, modifiedCount }) => {
-                res.send({ matchedCount, modifiedCount });
+            .then(({ n, nModified }) => {
+                winston.info(`No. of students in grade: ${n}, grade incremented: ${nModified}`);
+                res.send({ matchedCount: n, modifiedCount: nModified });
             }).catch(err => {
                 res.status(500).send({
                     message: err.message || "Some error occurred while Incrementing students' grade."

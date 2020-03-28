@@ -66,17 +66,17 @@ authenticatedRoutes.get('/students', students.findAll);
 // authenticatedRoutes.delete('/students/:id', students.delete);
 
 /**
- * Retrieve a single Student with student index no.
- */
-authenticatedRoutes.get('/students/:studentId', students.findOneByStudentId);
-/**
  * Update a Student with student index no.
  */
 authenticatedRoutes.put('/students/:studentId', students.updateByStudentId);
 /**
- * Create a multiple Students
+ * Create multiple Students
  */
 authenticatedRoutes.post('/students/multiple', students.createMultiple);
+/**
+ * Update multiple Students
+ */
+authenticatedRoutes.put('/students', students.updateMultiple);
 /**
  * Retrieve a single Student with student RFID
  */
@@ -96,6 +96,10 @@ authenticatedRoutes.get('/students/:studentId/attendance', students.getStudentWi
  * Query params 'grade: String' or, 'class' and 'grade' can be given
  */
 authenticatedRoutes.get('/students/incrementGrade', students.incrementGrade);
+/**
+ * Retrieve a single Student with student index no.
+ */
+authenticatedRoutes.get('/students/:studentId', students.findOneByStudentId);
 
 // attendance controller routes
 // ----------------------------
